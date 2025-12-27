@@ -115,75 +115,77 @@ function createRoundedRectPath(doc, x, y, w, h, r) {
 }
 
 async function buildSVG(text, size, border, logoFile, logoRatio, darkColor, lightColor, bodyShape, finderOutline, finderCenter) {
-  // Helper to build finder overlay in given document
-  const appendFinderSvg = (doc, svg, marginPx, modulePx, size, darkColor, finderOutline, finderCenter) => {
+  // Helpers to build finder overlays
+  const appendFinderOutlineSvg = (doc, svg, marginPx, modulePx, size, darkColor, finderOutline) => {
+    const fpSize = 7 * modulePx;
+    const strokeWidth = modulePx; // épaisseur d'un module
+    const drawOutline = (x, y) => {
+      if (finderOutline === 'circle') {
+        const circ = doc.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circ.setAttribute('cx', String(x + fpSize / 2));
+        circ.setAttribute('cy', String(y + fpSize / 2));
+        circ.setAttribute('r', String(fpSize / 2 - strokeWidth / 2));
+        circ.setAttribute('fill', 'none');
+        circ.setAttribute('stroke', darkColor || '#000000');
+        circ.setAttribute('stroke-width', String(strokeWidth));
+        svg.appendChild(circ);
+      } else if (finderOutline === 'rounded') {
+        const innerSize = fpSize - strokeWidth;
+        const rxy = Math.max(0, Math.min(innerSize / 2, innerSize * 0.12));
+        const rect = createRoundedRectPath(doc, x + strokeWidth / 2, y + strokeWidth / 2, innerSize, innerSize, rxy);
+        rect.setAttribute('fill', 'none');
+        rect.setAttribute('stroke', darkColor || '#000000');
+        rect.setAttribute('stroke-width', String(strokeWidth));
+        svg.appendChild(rect);
+      } else { // default or square
+        const rect = doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', String(x + strokeWidth / 2));
+        rect.setAttribute('y', String(y + strokeWidth / 2));
+        rect.setAttribute('width', String(fpSize - strokeWidth));
+        rect.setAttribute('height', String(fpSize - strokeWidth));
+        rect.setAttribute('fill', 'none');
+        rect.setAttribute('stroke', darkColor || '#000000');
+        rect.setAttribute('stroke-width', String(strokeWidth));
+        svg.appendChild(rect);
+      }
+    };
+    drawOutline(marginPx, marginPx);
+    drawOutline(size - marginPx - fpSize, marginPx);
+    drawOutline(marginPx, size - marginPx - fpSize);
+  };
+
+  const appendFinderCenterSvg = (doc, svg, marginPx, modulePx, size, darkColor, finderCenter) => {
     const fpSize = 7 * modulePx;
     const centerSize = 3 * modulePx;
     const centerOffset = 2 * modulePx;
-    const strokeWidth = Math.max(1, Math.floor(modulePx / 2));
-    const drawFinderSvg = (x, y) => {
-      // Outline
-      if (finderOutline && finderOutline !== 'default') {
-        if (finderOutline === 'circle') {
-          const circ = doc.createElementNS('http://www.w3.org/2000/svg', 'circle');
-          circ.setAttribute('cx', String(x + fpSize / 2));
-          circ.setAttribute('cy', String(y + fpSize / 2));
-          circ.setAttribute('r', String(fpSize / 2));
-          circ.setAttribute('fill', 'none');
-          circ.setAttribute('stroke', darkColor || '#000000');
-          circ.setAttribute('stroke-width', String(strokeWidth));
-          svg.appendChild(circ);
-        } else if (finderOutline === 'rounded') {
-          const rxy = Math.max(0, Math.min(fpSize / 2, fpSize * 0.12));
-          const rect = createRoundedRectPath(doc, x, y, fpSize, fpSize, rxy);
-          rect.setAttribute('fill', 'none');
-          rect.setAttribute('stroke', darkColor || '#000000');
-          rect.setAttribute('stroke-width', String(strokeWidth));
-          svg.appendChild(rect);
-        } else if (finderOutline === 'square') {
-          const rect = doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
-          rect.setAttribute('x', String(x));
-          rect.setAttribute('y', String(y));
-          rect.setAttribute('width', String(fpSize));
-          rect.setAttribute('height', String(fpSize));
-          rect.setAttribute('fill', 'none');
-          rect.setAttribute('stroke', darkColor || '#000000');
-          rect.setAttribute('stroke-width', String(strokeWidth));
-          svg.appendChild(rect);
-        }
-      }
-
-      // Center
-      if (finderCenter && finderCenter !== 'default') {
-        const cx = x + centerOffset;
-        const cy = y + centerOffset;
-        if (finderCenter === 'circle') {
-          const circ2 = doc.createElementNS('http://www.w3.org/2000/svg', 'circle');
-          circ2.setAttribute('cx', String(cx + centerSize / 2));
-          circ2.setAttribute('cy', String(cy + centerSize / 2));
-          circ2.setAttribute('r', String(centerSize / 2));
-          circ2.setAttribute('fill', darkColor || '#000000');
-          svg.appendChild(circ2);
-        } else if (finderCenter === 'rounded') {
-          const cr = Math.max(0, Math.min(centerSize / 2, centerSize * 0.2));
-          const rect2 = createRoundedRectPath(doc, cx, cy, centerSize, centerSize, cr);
-          rect2.setAttribute('fill', darkColor || '#000000');
-          svg.appendChild(rect2);
-        } else if (finderCenter === 'square') {
-          const rect2 = doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
-          rect2.setAttribute('x', String(cx));
-          rect2.setAttribute('y', String(cy));
-          rect2.setAttribute('width', String(centerSize));
-          rect2.setAttribute('height', String(centerSize));
-          rect2.setAttribute('fill', darkColor || '#000000');
-          svg.appendChild(rect2);
-        }
+    const drawCenter = (x, y) => {
+      const cx = x + centerOffset;
+      const cy = y + centerOffset;
+      if (finderCenter === 'circle') {
+        const circ2 = doc.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circ2.setAttribute('cx', String(cx + centerSize / 2));
+        circ2.setAttribute('cy', String(cy + centerSize / 2));
+        circ2.setAttribute('r', String(centerSize / 2));
+        circ2.setAttribute('fill', darkColor || '#000000');
+        svg.appendChild(circ2);
+      } else if (finderCenter === 'rounded') {
+        const cr = Math.max(0, Math.min(centerSize / 2, centerSize * 0.2));
+        const rect2 = createRoundedRectPath(doc, cx, cy, centerSize, centerSize, cr);
+        rect2.setAttribute('fill', darkColor || '#000000');
+        svg.appendChild(rect2);
+      } else { // default or square
+        const rect2 = doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect2.setAttribute('x', String(cx));
+        rect2.setAttribute('y', String(cy));
+        rect2.setAttribute('width', String(centerSize));
+        rect2.setAttribute('height', String(centerSize));
+        rect2.setAttribute('fill', darkColor || '#000000');
+        svg.appendChild(rect2);
       }
     };
-
-    drawFinderSvg(marginPx, marginPx);
-    drawFinderSvg(size - marginPx - fpSize, marginPx);
-    drawFinderSvg(marginPx, size - marginPx - fpSize);
+    drawCenter(marginPx, marginPx);
+    drawCenter(size - marginPx - fpSize, marginPx);
+    drawCenter(marginPx, size - marginPx - fpSize);
   };
 
   // If default body shape: use library SVG directly
@@ -207,6 +209,7 @@ async function buildSVG(text, size, border, logoFile, logoRatio, darkColor, ligh
     const modulesCount = qr.modules.size;
     const modulePx = size / (modulesCount + border * 2);
     const marginPx = border * modulePx;
+    const fpSize = 7 * modulePx;
 
     // Logo background + image
     const logoSize = Math.floor(size * logoRatio);
@@ -233,8 +236,23 @@ async function buildSVG(text, size, border, logoFile, logoRatio, darkColor, ligh
       svg.appendChild(image);
     }
 
-    // Finder overlay if requested
-    appendFinderSvg(doc, svg, marginPx, modulePx, size, darkColor, finderOutline, finderCenter);
+  // Effacer les zones des repères sous-jacentes (légèrement élargies) puis ajouter les overlays
+  const wipe = (x, y) => {
+    const eps = modulePx * 0.5; // léger dépassement
+    const rect = doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', String(x - eps));
+    rect.setAttribute('y', String(y - eps));
+    rect.setAttribute('width', String(fpSize + 2 * eps));
+    rect.setAttribute('height', String(fpSize + 2 * eps));
+    rect.setAttribute('fill', lightColor || '#ffffff');
+    svg.appendChild(rect);
+  };
+  wipe(marginPx, marginPx);
+  wipe(size - marginPx - fpSize, marginPx);
+  wipe(marginPx, size - marginPx - fpSize);
+  // Finder overlays si demandé
+  appendFinderOutlineSvg(doc, svg, marginPx, modulePx, size, darkColor, finderOutline);
+  appendFinderCenterSvg(doc, svg, marginPx, modulePx, size, darkColor, finderCenter);
 
     const xml = new XMLSerializer().serializeToString(doc);
     return new Blob([xml], { type: 'image/svg+xml' });
@@ -318,8 +336,25 @@ async function buildSVG(text, size, border, logoFile, logoRatio, darkColor, ligh
     svg.appendChild(image);
   }
 
-  // Finder overlay
-  appendFinderSvg(doc, svg, marginPx, modulePx, size, darkColor, finderOutline, finderCenter);
+  // Si une des formes n'est pas par défaut, effacer la zone des repères et reconstruire
+  const fpSize = 7 * modulePx;
+  // Toujours nettoyer (légèrement élargi) et reconstruire contour + centre
+  const wipe = (x, y) => {
+    const eps = modulePx * 0.5;
+    const rect = doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', String(x - eps));
+    rect.setAttribute('y', String(y - eps));
+    rect.setAttribute('width', String(fpSize + 2 * eps));
+    rect.setAttribute('height', String(fpSize + 2 * eps));
+    rect.setAttribute('fill', lightColor || '#ffffff');
+    svg.appendChild(rect);
+  };
+  wipe(marginPx, marginPx);
+  wipe(size - marginPx - fpSize, marginPx);
+  wipe(marginPx, size - marginPx - fpSize);
+  // Reconstruire contour et centre (par défaut ou custom)
+  appendFinderOutlineSvg(doc, svg, marginPx, modulePx, size, darkColor, finderOutline);
+  appendFinderCenterSvg(doc, svg, marginPx, modulePx, size, darkColor, finderCenter);
 
   const xml = new XMLSerializer().serializeToString(svg);
   return new Blob([xml], { type: 'image/svg+xml' });
@@ -411,7 +446,7 @@ function drawLogoOverCanvas(file, logoRatio, lightColor) {
   reader.readAsDataURL(file);
 }
 
-function drawFinderPatterns(textOrPlaceholder, size, border, outlineShape, centerShape, darkColor) {
+function drawFinderPatterns(textOrPlaceholder, size, border, outlineShape, centerShape, darkColor, lightColor) {
   try {
     const ctx = canvas.getContext('2d');
     const qr = QRCode.create(textOrPlaceholder, { errorCorrectionLevel: 'H' });
@@ -424,28 +459,37 @@ function drawFinderPatterns(textOrPlaceholder, size, border, outlineShape, cente
     const centerSize = 3 * modulePx;
     const centerOffset = 2 * modulePx;
 
-    // If both shapes are default, don't draw any overlay
-    if ((outlineShape === 'default' || !outlineShape) && (centerShape === 'default' || !centerShape)) {
-      return;
-    }
+    // Toujours reconstruire les motifs de repère (contour + centre)
+
+  // Effacer la zone des motifs de repère déjà dessinée par le corps (légèrement élargi)
+  ctx.fillStyle = lightColor || '#ffffff';
+  const eps = modulePx * 0.5; // léger dépassement pour couvrir les arrondis
+  // Haut-gauche
+  ctx.fillRect(marginPx - eps, marginPx - eps, fpSize + 2 * eps, fpSize + 2 * eps);
+  // Haut-droite
+  ctx.fillRect(size - marginPx - fpSize - eps, marginPx - eps, fpSize + 2 * eps, fpSize + 2 * eps);
+  // Bas-gauche
+  ctx.fillRect(marginPx - eps, size - marginPx - fpSize - eps, fpSize + 2 * eps, fpSize + 2 * eps);
 
     ctx.save();
-    ctx.strokeStyle = darkColor || 'rgba(0,0,0,0.45)';
-    ctx.lineWidth = Math.max(1, Math.floor(modulePx / 2));
+  ctx.strokeStyle = darkColor || '#000000';
+  ctx.lineWidth = modulePx; // épaisseur d'un module
     ctx.setLineDash([]); // pas de pointillés
 
     const drawOne = (x, y) => {
       // Contour
+      const lw = ctx.lineWidth;
       if (outlineShape === 'circle') {
         ctx.beginPath();
-        ctx.arc(x + fpSize / 2, y + fpSize / 2, fpSize / 2, 0, Math.PI * 2);
+        ctx.arc(x + fpSize / 2, y + fpSize / 2, fpSize / 2 - lw / 2, 0, Math.PI * 2);
         ctx.stroke();
       } else if (outlineShape === 'rounded') {
-        const rxy = Math.max(0, Math.min(fpSize / 2, fpSize * 0.12));
-        drawRoundedRect(ctx, x, y, fpSize, fpSize, rxy);
+        const innerSize = fpSize - lw;
+        const rxy = Math.max(0, Math.min(innerSize / 2, innerSize * 0.12));
+        drawRoundedRect(ctx, x + lw / 2, y + lw / 2, innerSize, innerSize, rxy);
         ctx.stroke();
       } else {
-        ctx.strokeRect(x, y, fpSize, fpSize);
+        ctx.strokeRect(x + lw / 2, y + lw / 2, fpSize - lw, fpSize - lw);
       }
 
       // Centre
@@ -465,12 +509,12 @@ function drawFinderPatterns(textOrPlaceholder, size, border, outlineShape, cente
       }
     };
 
-    // Haut-gauche
-    drawOne(marginPx, marginPx);
-    // Haut-droite
-    drawOne(size - marginPx - fpSize, marginPx);
-    // Bas-gauche
-    drawOne(marginPx, size - marginPx - fpSize);
+  // Haut-gauche
+  drawOne(marginPx, marginPx);
+  // Haut-droite
+  drawOne(size - marginPx - fpSize, marginPx);
+  // Bas-gauche
+  drawOne(marginPx, size - marginPx - fpSize);
 
     ctx.restore();
   } catch (e) {
@@ -507,7 +551,7 @@ async function regenerate() {
       ctx.fillStyle = lightColor || '#fff';
       ctx.fillRect(0, 0, size, size);
       // Utilise un placeholder pour calculer l’échelle des repères
-  drawFinderPatterns('placeholder', size, border, finderOutline, finderCenter, darkColor);
+  drawFinderPatterns('placeholder', size, border, finderOutline, finderCenter, darkColor, lightColor);
       // Afficher le logo immédiatement si sélectionné, même sans texte
       if (logoFile) {
         drawLogoOverCanvas(logoFile, logoRatio, lightColor);
@@ -519,7 +563,7 @@ async function regenerate() {
     }
 
   await generateQR(text, size, border, darkColor, lightColor, bodyShape);
-  drawFinderPatterns(text, size, border, finderOutline, finderCenter, darkColor);
+  drawFinderPatterns(text, size, border, finderOutline, finderCenter, darkColor, lightColor);
     if (logoFile) {
       drawLogoOverCanvas(logoFile, logoRatio, lightColor);
     }
