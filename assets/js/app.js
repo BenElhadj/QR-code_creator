@@ -357,7 +357,9 @@ lightColorInput.addEventListener('input', regenerate);
 
 // Contrôles +/- pour le ratio du logo
 if (ratioMinusBtn && ratioPlusBtn) {
-  ratioMinusBtn.addEventListener('click', () => {
+  ratioMinusBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     const current = Number(ratioInput.value) || 0.27;
     const next = clampLogoRatio(Number((current - 0.01).toFixed(2)));
     ratioInput.value = next.toFixed(2);
@@ -365,7 +367,9 @@ if (ratioMinusBtn && ratioPlusBtn) {
     regenerate();
   });
 
-  ratioPlusBtn.addEventListener('click', () => {
+  ratioPlusBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     const current = Number(ratioInput.value) || 0.27;
     const next = clampLogoRatio(Number((current + 0.01).toFixed(2)));
     ratioInput.value = next.toFixed(2);
@@ -376,3 +380,6 @@ if (ratioMinusBtn && ratioPlusBtn) {
 
 // Affichage initial du ratio
 updateLogoRatioDisplay();
+
+// Dessiner immédiatement l'aperçu (repères visibles si texte vide)
+regenerate();
