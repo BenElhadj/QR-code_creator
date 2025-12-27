@@ -66,6 +66,33 @@
           Couleur de fond
           <input type="color" id="qr-color-light" value="#ffffff" />
         </label>
+        <label>
+          Forme du corps
+          <select id="qr-body-shape">
+            <option value="default" selected>Par défaut</option>
+            <option value="square">Carré</option>
+            <option value="circle">Rond</option>
+            <option value="rounded">Arrondi</option>
+          </select>
+        </label>
+        <label>
+          Forme du contour des marqueurs
+          <select id="qr-finder-outline">
+            <option value="default" selected>Par défaut</option>
+            <option value="square">Carré</option>
+            <option value="circle">Rond</option>
+            <option value="rounded">Arrondi</option>
+          </select>
+        </label>
+        <label>
+          Forme du centre des marqueurs
+          <select id="qr-finder-center">
+            <option value="default" selected>Par défaut</option>
+            <option value="square">Carré</option>
+            <option value="circle">Rond</option>
+            <option value="rounded">Arrondi</option>
+          </select>
+        </label>
       </div>
 
       <button type="submit">Générer</button>
