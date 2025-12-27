@@ -3,8 +3,7 @@ const form = document.getElementById('qr-form');
 const textInput = document.getElementById('qr-text');
 const logoInput = document.getElementById('qr-logo');
 const sizeSelect = document.getElementById('qr-size-select');
-const sizeCustomWrapper = document.getElementById('qr-size-custom-wrapper');
-const sizeCustomInput = document.getElementById('qr-size-custom');
+// Le select se transformera en input lorsqu'on choisit "Autre…"
 const formatSelect = document.getElementById('qr-format');
 const borderInput = document.getElementById('qr-border');
 const ratioInput = document.getElementById('qr-logo-ratio');
@@ -39,11 +38,12 @@ function updateDownloadLabel() {
 }
 
 function getSelectedSize() {
-  const val = sizeSelect.value;
-  if (val === 'other') {
-    const n = Number(sizeCustomInput.value) || 1024;
+  const input = document.getElementById('qr-size-input');
+  if (input) {
+    const n = Number(input.value) || 1024;
     return Math.max(256, Math.min(4096, n));
   }
+  const val = sizeSelect.value;
   return Number(val);
 }
 
@@ -262,19 +262,22 @@ downloadBtn.addEventListener('click', () => {
   }
 });
 
-// Toggle champ personnalisé selon sélection
+// Transformer le select en input quand "Autre…" est sélectionné
 sizeSelect.addEventListener('change', () => {
   if (sizeSelect.value === 'other') {
-    sizeCustomWrapper.classList.remove('hidden');
-  } else {
-    sizeCustomWrapper.classList.add('hidden');
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.id = 'qr-size-input';
+    input.min = '256';
+    input.max = '4096';
+    input.step = '64';
+    input.placeholder = '1024';
+    input.value = '1024';
+    // Remplace le select par l'input dans le même label
+    const parent = sizeSelect.parentElement;
+    parent.replaceChild(input, sizeSelect);
   }
 });
-
-// Initialisation: masquer le champ personnalisé si non sélectionné
-if (sizeSelect.value !== 'other') {
-  sizeCustomWrapper.classList.add('hidden');
-}
 
 // Mettre à jour le label du bouton selon le format sélectionné
 formatSelect.addEventListener('change', updateDownloadLabel);
