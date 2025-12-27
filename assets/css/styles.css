@@ -13,3 +13,17 @@ button { padding: 10px 16px; }
 input[type="text"], input[type="number"] { padding: 8px; }
 /* Masquage utilitaire */
 .hidden { display: none; }
+
+/* Contrôles du ratio logo */
+.ratio-control {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+}
+.ratio-control button {
+	padding: 6px 10px;
+}
+.ratio-control #qr-logo-ratio-display {
+	min-width: 44px;
+	text-align: center;
+}

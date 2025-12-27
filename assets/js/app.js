@@ -7,6 +7,19 @@ const sizeSelect = document.getElementById('qr-size-select');
 const formatSelect = document.getElementById('qr-format');
 const borderInput = document.getElementById('qr-border');
 const ratioInput = document.getElementById('qr-logo-ratio');
+const ratioMinusBtn = document.getElementById('qr-logo-minus');
+const ratioPlusBtn = document.getElementById('qr-logo-plus');
+const ratioDisplay = document.getElementById('qr-logo-ratio-display');
+
+function clampLogoRatio(r) {
+  return Math.max(0.1, Math.min(0.5, r));
+}
+
+function updateLogoRatioDisplay() {
+  const val = Number(ratioInput.value) || 0.27;
+  const pct = Math.round(val * 100);
+  if (ratioDisplay) ratioDisplay.textContent = pct + '%';
+}
 const darkColorInput = document.getElementById('qr-color-dark');
 const lightColorInput = document.getElementById('qr-color-light');
 const canvas = document.getElementById('qr-canvas');
@@ -181,16 +194,39 @@ function drawLogoOverCanvas(file, logoRatio, lightColor) {
   reader.readAsDataURL(file);
 }
 
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
+function drawFinderPatterns(textOrPlaceholder, size, border) {
+  try {
+    const ctx = canvas.getContext('2d');
+    const qr = QRCode.create(textOrPlaceholder, { errorCorrectionLevel: 'H' });
+    const modulesCount = qr.modules.size;
+    const modulePx = size / (modulesCount + border * 2);
+    const marginPx = border * modulePx;
+
+    // Taille standard du motif de repère: 7 modules
+    const fpSize = 7 * modulePx;
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0,0,0,0.45)'; // contours sobres
+    ctx.lineWidth = Math.max(1, Math.floor(modulePx / 2));
+    ctx.setLineDash([]); // pas de pointillés
+
+    // Haut-gauche
+    ctx.strokeRect(marginPx, marginPx, fpSize, fpSize);
+    // Haut-droite
+    ctx.strokeRect(size - marginPx - fpSize, marginPx, fpSize, fpSize);
+    // Bas-gauche
+    ctx.strokeRect(marginPx, size - marginPx - fpSize, fpSize, fpSize);
+
+    ctx.restore();
+  } catch (e) {
+    console.debug('Finder overlay error:', e);
+  }
+}
+
+async function regenerate() {
   setStatus('');
 
   const text = (textInput.value || '').trim();
-  if (!text) {
-    setStatus('Veuillez saisir un texte/URL.');
-    return;
-  }
-
   const size = getSelectedSize();
   const border = Math.max(0, Math.min(10, Number(borderInput.value) || 2));
   const logoRatio = Math.max(0.1, Math.min(0.5, Number(ratioInput.value) || 0.27));
@@ -204,7 +240,28 @@ form.addEventListener('submit', async (e) => {
   }
 
   try {
+    if (!text) {
+      // Canvas vide + repères affichés
+      const ctx = canvas.getContext('2d');
+      canvas.width = size;
+      canvas.height = size;
+      ctx.clearRect(0, 0, size, size);
+      ctx.fillStyle = lightColor || '#fff';
+      ctx.fillRect(0, 0, size, size);
+      // Utilise un placeholder pour calculer l’échelle des repères
+      drawFinderPatterns('placeholder', size, border);
+      // Afficher le logo immédiatement si sélectionné, même sans texte
+      if (logoFile) {
+        drawLogoOverCanvas(logoFile, logoRatio, lightColor);
+      }
+      downloadBtn.disabled = true;
+      updateDownloadLabel();
+      setStatus('Repères affichés.');
+      return;
+    }
+
     await generateQR(text, size, border, darkColor, lightColor);
+    drawFinderPatterns(text, size, border);
     if (logoFile) {
       drawLogoOverCanvas(logoFile, logoRatio, lightColor);
     }
@@ -218,12 +275,17 @@ form.addEventListener('submit', async (e) => {
     lastBorder = border;
     lastLogoRatio = logoRatio;
     lastLogoFile = logoFile || null;
-  lastDarkColor = darkColor;
-  lastLightColor = lightColor;
+    lastDarkColor = darkColor;
+    lastLightColor = lightColor;
   } catch (err) {
     console.error(err);
     setStatus('Erreur lors de la génération du QR.');
   }
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  await regenerate();
 });
 
 downloadBtn.addEventListener('click', () => {
@@ -276,9 +338,41 @@ sizeSelect.addEventListener('change', () => {
     // Remplace le select par l'input dans le même label
     const parent = sizeSelect.parentElement;
     parent.replaceChild(input, sizeSelect);
+    input.addEventListener('input', regenerate);
   }
+  regenerate();
 });
 
 // Mettre à jour le label du bouton selon le format sélectionné
 formatSelect.addEventListener('change', updateDownloadLabel);
 updateDownloadLabel();
+
+// Mise à jour en direct de l’aperçu
+textInput.addEventListener('input', regenerate);
+logoInput.addEventListener('change', regenerate);
+borderInput.addEventListener('input', regenerate);
+ratioInput.addEventListener('input', regenerate);
+darkColorInput.addEventListener('input', regenerate);
+lightColorInput.addEventListener('input', regenerate);
+
+// Contrôles +/- pour le ratio du logo
+if (ratioMinusBtn && ratioPlusBtn) {
+  ratioMinusBtn.addEventListener('click', () => {
+    const current = Number(ratioInput.value) || 0.27;
+    const next = clampLogoRatio(Number((current - 0.01).toFixed(2)));
+    ratioInput.value = next.toFixed(2);
+    updateLogoRatioDisplay();
+    regenerate();
+  });
+
+  ratioPlusBtn.addEventListener('click', () => {
+    const current = Number(ratioInput.value) || 0.27;
+    const next = clampLogoRatio(Number((current + 0.01).toFixed(2)));
+    ratioInput.value = next.toFixed(2);
+    updateLogoRatioDisplay();
+    regenerate();
+  });
+}
+
+// Affichage initial du ratio
+updateLogoRatioDisplay();
