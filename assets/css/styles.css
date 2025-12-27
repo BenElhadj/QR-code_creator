@@ -9,8 +9,30 @@ label { display: grid; gap: 6px; }
 canvas { max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px; background: #fff; }
 .actions { display: flex; gap: 12px; align-items: center; }
 #status { opacity: 0.8; font-size: 0.9rem; }
-button { padding: 10px 16px; }
-input[type="text"], input[type="number"] { padding: 8px; }
+
+/* Tailles unifiées pour les contrôles */
+button,
+input[type="text"],
+input[type="number"],
+input[type="color"],
+select {
+	height: 40px;
+	min-height: 40px;
+	font-size: 1rem;
+	border-radius: 8px;
+}
+
+button {
+	padding: 0 16px;
+}
+
+input[type="text"], input[type="number"], select {
+	padding: 0 12px;
+}
+
+input[type="color"] {
+	padding: 0; /* Les color pickers gèrent mal le padding */
+}
 /* Masquage utilitaire */
 .hidden { display: none; }
 
@@ -21,9 +43,14 @@ input[type="text"], input[type="number"] { padding: 8px; }
 	gap: 8px;
 }
 .ratio-control button {
-	padding: 6px 10px;
+	height: 40px;
+	padding: 0 12px;
 }
 .ratio-control #qr-logo-ratio-display {
-	min-width: 44px;
+	min-width: 56px;
+	height: 40px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	text-align: center;
 }
